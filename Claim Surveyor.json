@@ -1,0 +1,164 @@
+{
+  "name": "Claim Surveyor",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Using a webhook url{{ $json.webhookUrl }}\nthere are some images uploaded\n\nYou are an experienced insurance company surveyor.  \nYour task is to analyze the uploaded images of a damaged vehicle and generate a detailed claims report.  \n\nGuidelines:  \n1. Write in a professional, surveyor-style tone.  \n  \n2. For each uploaded image, provide a **separate summary**.  \n   - Label clearly: \"Image 1:\", \"Image 2:\", etc.  \n   - If there are 5 images, produce 5 summaries (and so on).  \n4. Each image summary must include:  \n   - Vehicle Identification (if visible)  \n   - Type of Damage (minor, moderate, severe, frontal, side, etc.)  \n   - Specific Damages Observed (bullet points if possible)  \n   - Overall Assessment for that image  \n5. If multiple images show overlapping damage, still **describe findings per image separately**. Do not merge them.  \n6. Be prescriptive and structured. Avoid vague wording.  \n7. Do not output JSON or code. Produce **plain text surveyor reports only**.  \n\n⚠️ Consistency Rule:  \nIf any uploaded image does not match the same vehicle as the others, stop and output this error message instead of a report:  \n\"Error: One or more uploaded images do not appear to show the same vehicle. Please upload consistent images of the same vehicle for assessment.\"  \n\n---\n\n### ✅ Output Format Example  \n\n**MOTOR VEHICLE DAMAGE ASSESSMENT REPORT**  \n**Date of Survey:** [Current Date]  \n\nImage 1:  \n- Vehicle Identification: [details]  \n- Type of Damage: [details]  \n- Specific Damages Observed:  \n   • [damage 1]  \n   • [damage 2]  \n- Overall Assessment: [summary]  \n\nImage 2:  \n- Vehicle Identification: [details]  \n- Type of Damage: [details]  \n- Specific Damages Observed:  \n   • [damage 1]  \n   • [damage 2]  \n- Overall Assessment: [summary]  \n\n…and so on for all uploaded images.  \n\nIf images are inconsistent → return only the error message above.  \n\nDont use date of survey claims no only generate a assesment report\n\nif the damage is severe so the vehicle will be not repairable and you will be contact by representative with in 2 Buisness days\nIf is there is no image in the webhook url output should be empty\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -48
+      ],
+      "id": "8403a5ca-4c1c-4675-881b-86ea197241ee",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d3013f71-9048-4db1-a54d-f130eea68d1b",
+        "options": {
+          "binaryPropertyName": "images"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        -32
+      ],
+      "id": "f92e1df8-0f2e-4cba-bf39-0a9fc11765c1",
+      "name": "Webhook",
+      "webhookId": "d3013f71-9048-4db1-a54d-f130eea68d1b"
+    },
+    {
+      "parameters": {
+        "toRecipients": "a.rauf@smart-solutionsllc.com",
+        "subject": "Claims Report Assessments",
+        "bodyContent": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -48
+      ],
+      "id": "768d01c5-9d2a-4d3a-b4fc-1a533905ffc5",
+      "name": "Send a message1",
+      "webhookId": "6e0e5256-fcd6-4c4a-9640-a7bda1eb2b9a",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "etwJJOfNfBuOVuSV",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        64
+      ],
+      "id": "a28f2a37-ab8a-46dc-a876-6f1e2ca088d3",
+      "name": "Code",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        160
+      ],
+      "id": "1668717d-f133-4fc3-a223-e542b41f65c7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "4KNa58CZ40ehgCrm",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "fc52493c-154c-4fb2-89af-4c4831ee76da",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "679c06932652ddbac7b5e806add613ebff01f05226fb1b7584b0f437818822df"
+  },
+  "id": "33Hynv2rQQ7ypXSO",
+  "tags": []
+}
